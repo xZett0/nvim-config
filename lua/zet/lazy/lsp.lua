@@ -16,6 +16,12 @@ return {
     config = function()
         local cmp = require('cmp')
         local cmp_lsp = require("cmp_nvim_lsp")
+        local cmp_autopairs = require("nvim-autopairs.completion.cmp")
+
+        cmp.event:on(
+            "confirm_done",
+            cmp_autopairs.on_confirm_done()
+        )
 
         local capabilities = vim.tbl_deep_extend(
             "force",
@@ -30,6 +36,11 @@ return {
             ensure_installed = {
                 "lua_ls",
                 "jdtls",
+                "gopls",
+                "basedpyright",
+                "ts_ls",
+                "html-lsp",
+                "cssls",
             },
             handlers = {
                 function(server_name)
@@ -40,22 +51,24 @@ return {
             }
         })
 
-        -- === Load custom LSP configurations from lua/zet/lsps/*.lua ===
-        local config_path = vim.fn.stdpath("config") .. "/lua/zet/lsps"  -- ✅ fixed from "lsps" to "config"
+        local config_path = vim.fn.stdpath("config") .. "/lua/zet/lazy/lsps"
         local config_files = vim.fn.globpath(config_path, "*.lua", false, true)
 
         for _, file in ipairs(config_files) do
-            -- Convert path like ~/.config/nvim/lua/zet/lsps/lua_ls.lua → zet.lsps.lua_ls
             local module_name = file:match("lua/(.*)%.lua$"):gsub("/", ".")
             local ok, module = pcall(require, module_name)
-            if ok and type(module.setup) == "function" then
-                module.setup(capabilities)
+
+            if ok then
+                if type(module) == "table" and type(module.setup) == "function" then
+                    module.setup(capabilities)
+                else
+                    vim.notify("LSP config has no setup(): " .. module_name, vim.log.levels.WARN)
+                end
             else
                 vim.notify("Failed to load LSP config: " .. module_name, vim.log.levels.WARN)
             end
         end
 
-        -- === nvim-cmp setup ===
         local cmp_select = { behavior = cmp.SelectBehavior.Select }
 
         cmp.setup({
@@ -90,4 +103,3 @@ return {
         })
     end
 }
-

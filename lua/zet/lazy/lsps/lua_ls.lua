@@ -1,6 +1,6 @@
-local lua_ls = {}
+local lua_lsp = {}
 
-function lua_ls.setup(capabilities)
+function lua_lsp.setup(capabilities)
     require("lspconfig").lua_ls.setup {
         capabilities = capabilities,
         settings = {
@@ -12,3 +12,5 @@ function lua_ls.setup(capabilities)
         }
     }
 end
+
+return lua_lsp

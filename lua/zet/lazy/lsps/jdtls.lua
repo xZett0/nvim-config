@@ -1,33 +1,30 @@
+local jd = {}
 
-local j = {}
+function jd.setup(capabilities)
+    local jdtls = require("lspconfig").jdtls
 
-function j.setup(capabilities)
-    print("JDTLS Loaded")
-    local jd = require("lspconfig").jdtls
     local home = vim.fn.expand("~")
-    local workspace_dir = home .. "/.local/share/nvim/mason/packages/jdtls/" .. vim.fn.fnamemodify(vim.fn.getcwd(), ":p:h:t")
+    local root_dir = require("lspconfig.util").root_pattern(
+        "pom.xml", "build.gradle", ".git"
+    )
 
-    jd.setup({
+    local workspace_dir = home .. "/.local/share/nvim/jdtls_workspaces/"
+        .. vim.fn.fnamemodify(vim.fn.getcwd(), ":p:h:t")
+
+    jdtls.setup({
         capabilities = capabilities,
+        root_dir = root_dir,
         cmd = {
-            "jdtls",  -- mason installs this in PATH
+            "jdtls",
             "-data", workspace_dir,
         },
-        root_dir = require("lspconfig.util").root_pattern(
-            ".git", "mvw", "gradlew", "pom.xml", "build.gradle"
-        ),
         settings = {
             java = {
                 signatureHelp = { enabled = true },
-                completion = { favoriteStaticMembers = {} },
-                contentProvider = { preferred = "fernflower" },
-            }
-        },
-        init_options = {
-            bundles = {},
+                completion = { enabled = true },
+            },
         },
     })
 end
 
-return j
-
+return jd

@@ -16,3 +16,5 @@ function go.setup(capabilities)
         }
     }
 end
+
+return go
