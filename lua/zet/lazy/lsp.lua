@@ -14,14 +14,12 @@ return {
     },
 
     config = function()
+        -- Note: require("lspconfig") is removed as per your new pattern guidelines
         local cmp = require('cmp')
         local cmp_lsp = require("cmp_nvim_lsp")
         local cmp_autopairs = require("nvim-autopairs.completion.cmp")
 
-        cmp.event:on(
-            "confirm_done",
-            cmp_autopairs.on_confirm_done()
-        )
+        cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
 
         local capabilities = vim.tbl_deep_extend(
             "force",
@@ -32,42 +30,31 @@ return {
 
         require("fidget").setup({})
         require("mason").setup()
+
         require("mason-lspconfig").setup({
             ensure_installed = {
-                "lua_ls",
-                "jdtls",
-                "gopls",
-                "basedpyright",
-                "ts_ls",
-                "html-lsp",
-                "cssls",
+                "lua_ls", "jdtls", "gopls", "basedpyright",
+                "ts_ls", "html", "cssls", "clangd",
             },
             handlers = {
                 function(server_name)
-                    require("lspconfig")[server_name].setup {
-                        capabilities = capabilities
-                    }
+                    local opts = { capabilities = capabilities }
+
+                    local require_ok, custom_opts = pcall(require, "zet.lazy.lsps." .. server_name)
+                    if require_ok then
+                        opts = vim.tbl_deep_extend("force", opts, custom_opts)
+                    end
+
+                    vim.lsp.config({
+                        servers = {
+                            [server_name] = opts
+                        }
+                    })
+
+                    vim.lsp.enable(server_name)
                 end,
             }
         })
-
-        local config_path = vim.fn.stdpath("config") .. "/lua/zet/lazy/lsps"
-        local config_files = vim.fn.globpath(config_path, "*.lua", false, true)
-
-        for _, file in ipairs(config_files) do
-            local module_name = file:match("lua/(.*)%.lua$"):gsub("/", ".")
-            local ok, module = pcall(require, module_name)
-
-            if ok then
-                if type(module) == "table" and type(module.setup) == "function" then
-                    module.setup(capabilities)
-                else
-                    vim.notify("LSP config has no setup(): " .. module_name, vim.log.levels.WARN)
-                end
-            else
-                vim.notify("Failed to load LSP config: " .. module_name, vim.log.levels.WARN)
-            end
-        end
 
         local cmp_select = { behavior = cmp.SelectBehavior.Select }
 
